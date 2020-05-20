@@ -3,42 +3,102 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:d="http://xamarin.com/schemas/2014/forms/design"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:prism="clr-namespace:Prism.Mvvm;assembly=Prism.Forms"
+             prism:ViewModelLocator.AutowireViewModel="True"             
              mc:Ignorable="d"
+              Title="Settings"
+             xmlns:helpers="clr-namespace:DomoticzHome"
              x:Class="DomoticzHome.Views.SettingsPage">
 
     <StackLayout  HorizontalOptions="CenterAndExpand"  >
-
-        <Label Text="LAN Settings" />
+        <Label Text="Primary Domoticz Server Settings" />
         <StackLayout Orientation="Horizontal">
 
-            <Image Source="{Binding WanImage}" WidthRequest="20" HeightRequest="20" />
+            <StackLayout Orientation="Horizontal">
+                <Image Source="{Binding PrimaryServerImage }" WidthRequest="30" HeightRequest="30" Margin="0,20,0,0"/>
 
-            <Picker x:Name="picker" Title="Select a protocol" TitleColor="Black" SelectedItem="{Binding Protocol}"  >  
-                <Picker.ItemsSource>
-                    <x:Array Type="{x:Type x:String}">
-                        <x:String>Http://</x:String>
-                        <x:String>Https://</x:String>
-                    </x:Array>
-                </Picker.ItemsSource>
-            </Picker>
+                <Picker x:Name="picker" Title="Select a protocol" TitleColor="Black" SelectedItem="{Binding Protocol}"  >
+                    <Picker.ItemsSource>
+                        <x:Array Type="{x:Type x:String}">
+                            <x:String>Http://</x:String>
+                            <x:String>Https://</x:String>
+                        </x:Array>
+                    </Picker.ItemsSource>
+                </Picker>
 
+                <StackLayout Orientation="Vertical" >
+                    <Label Text="LAN Address" />
+                    <Entry x:Name="primaryServerName" Text="{Binding Address}" WidthRequest="200" TextColor="Black"     >
+                    </Entry>
+                </StackLayout>
 
-            <StackLayout Orientation="Vertical" >
-                <!--<Image Source="{Binding LanImage}" WidthRequest="20" HeightRequest="20" />-->
-                <Label Text="LAN Address" />
-                <Entry x:Name="lanServerName" Text="{Binding Address}" WidthRequest="200" TextColor="Black" />
+                <StackLayout Orientation="Vertical" >
+
+                    <Label Text="LAN Port" />
+                    <Entry x:Name="primaryServerPort" Text="{Binding Port}"   TextColor="Black" HorizontalOptions="Center" >
+                        <Entry.Behaviors>
+                            <helpers:NumericValidationBehavior />
+                        </Entry.Behaviors>
+                    </Entry>
+                </StackLayout>
             </StackLayout>
-
-
-            <StackLayout Orientation="Vertical" >
-                <!--<Image Source="{Binding LanImage}" WidthRequest="20" HeightRequest="20" />-->
-                <Label Text="LAN Port" />
-                <Entry x:Name="lanServerPort" Text="{Binding Port}"   TextColor="Black" HorizontalOptions="Center" />
-            </StackLayout>
-
         </StackLayout>
 
+        <!--<eliteKit:eliteCheckbox
+  VerticalOptions="Start"
+  HorizontalOptions="Center"
+  HeightRequest="50"
+  WidthRequest="50"
+  ColorChecked="#254867"
+  ColorUnchecked="#548EC1"
+  ColorHighlighted="#3674A3"
+  ColorIcon="White"
+  HasShadow="True"
+  IsChecked="False" />-->
+
+
+        <StackLayout  HorizontalOptions="CenterAndExpand" Margin="0,20,0,0"  >
+            <Label Text="Secondary Domoticz Server Settings" />
+            <StackLayout Orientation="Horizontal">
+                <Label Text="Select to Enable backup Domoticz Server" />
+                <Switch IsToggled="{Binding UseSecondaryServer}" />
+            </StackLayout>
+
+            <StackLayout Orientation="Horizontal" IsEnabled="{Binding UseSecondaryServer}"  >
+
+                <StackLayout Orientation="Horizontal">
+                    <Image Source="{Binding SecondaryServerImage }" WidthRequest="30" HeightRequest="30" Margin="0,20,0,0"  />
+
+                    <Picker x:Name="pickerSecondary" Title="Select a protocol" TitleColor="Black" SelectedItem="{Binding SecondaryProtocol}"   >
+                        <Picker.ItemsSource>
+                            <x:Array Type="{x:Type x:String}">
+                                <x:String>Http://</x:String>
+                                <x:String>Https://</x:String>
+                            </x:Array>
+                        </Picker.ItemsSource>
+                    </Picker>
+
+                    <StackLayout Orientation="Vertical" >
+                        <Label Text="Secondary LAN Address" />
+                        <Entry x:Name="secondaryServerName" Text="{Binding SecondaryAddress}" WidthRequest="200" TextColor="Black"  >
+                        </Entry>
+                    </StackLayout>
+
+                    <StackLayout Orientation="Vertical" >
+
+                        <Label Text="Secondary LAN Port" />
+                        <Entry x:Name="secondaryServerPort" Text="{Binding SecondaryPort}"   TextColor="Black" HorizontalOptions="Center" Margin="-70,0,0,0" >
+                            <Entry.Behaviors>
+                                <helpers:NumericValidationBehavior />
+                            </Entry.Behaviors>
+                        </Entry>
+                    </StackLayout>
+                </StackLayout>
+            </StackLayout>
+        </StackLayout>
     </StackLayout>
+
+
 
 
 

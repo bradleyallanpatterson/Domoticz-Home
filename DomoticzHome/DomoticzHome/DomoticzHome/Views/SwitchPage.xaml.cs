@@ -3,23 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Xamarin.Essentials;
+
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
 namespace DomoticzHome.Views
 {
-    [XamlCompilation(XamlCompilationOptions.Compile)]
-    public partial class SettingsPage : ContentPage
+    [XamlCompilation ( XamlCompilationOptions.Compile )]
+    public partial class SwitchPage : ContentPage
     {
-        public SettingsPage()
+        public SwitchPage ( )
         {
-            InitializeComponent();
+            InitializeComponent ( );
         }
-
-
-
-
-
     }
 }

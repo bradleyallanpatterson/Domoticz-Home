@@ -1,6 +1,7 @@
 ﻿using DomoticzHome.Interfaces;
 using DomoticzHome.Models;
 using Newtonsoft.Json;
+using Prism.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,25 +13,25 @@ namespace DomoticzHome.Services
 
     public class DomoticzApiService : BaseProvider, IDomoticzApiService
     {
-        public enum Response_Status { OK, ERR }
+        public enum Response_Status { OK, NOT_CHECKED, ERR }
+       // public enum ServerConnections { PRIMARY, SECONDARY, BOTH, NONE }
 
+        public enum ServerConnection { ONLINE, CHECKING, OFFLINE }
+
+        public static string Credentials = "/json.htm?username=brad=&password=elky454=&";
         public static string SunRiseSunSet = "type=command&param=getSunRiseSet";
         //public static string AllSwitches = "type=command&param=getlightswitches";
-        //public static string GetAllScenes = "type=scenes";
+        public static string GetAllScenes = "type=scenes";
         //public static string GetWeather = "type=devices&filter=weather&used=true&order=Name";
         //public static string GetTemp = "type=devices&filter=temp&used=true&order=Name";
         //public static string GetUtility = "type=devices&filter=utility&used=true&order=Name";
 
-        private static DomoticzApiService _instance = new DomoticzApiService();
+        private static DomoticzApiService _instance;
         private static object _syncRoot = new Object();
-        private bool _isLanAvailable = false;
-        private bool _isWanAvailable = false;
         private string _sunriseText = string.Empty;
         private string _sunsetText = string.Empty;
         private string _statusUpdated = string.Empty;
-        private bool _checkingLanNetwork = false;
-        private bool _checkingWanNetwork = false;
-
+        private INavigationService _navigationService;
 
 
         public NetworkAccess Access { get; set; }
@@ -39,68 +40,70 @@ namespace DomoticzHome.Services
 
 
 
+        //public bool IsLanAvailable()
+        //{
+        //    return _isLanAvailable;
+        //}
+        //public bool IsWanAvailable()
+        //{
+        //    return _isWanAvailable;
+        //}
 
 
-        public bool IsLanAvailable()
-        {
-            return _isLanAvailable;
-        }
-        public bool IsWanAvailable()
-        {
-            return _isWanAvailable;
-        }
+        //public void SetLanAvailable(bool yesOrNo)
+        //{
+        //    _isLanAvailable = yesOrNo;
+        //  //  MessagingCenter.Send<DomoticzApiService, bool>(this, "SetNetworkStatus", true);
+        //}
+        //public void SetWanAvailable(bool yesOrNo)
+        //{
+        //    _isWanAvailable = yesOrNo;
+        //   // MessagingCenter.Send<DomoticzApiService, bool>(this, "SetNetworkStatus", false);
+        //}
+
+        ///// <summary>
+        ///// Gets or sets a value indicating whether LAN network endpoint is currently being checked for availablity.
+        ///// </summary>
+        ///// <value><c>true</c> if the LAN is available; otherwise, <c>false</c>.</value>
+        //public bool CheckingLanNetwork
+        //{
+        //    get { return _checkingLanNetwork; }
+        //    set
+        //    {
+        //        _checkingLanNetwork = value;
+        //        //MessagingCenter.Send<DomoticzApiService, bool>(this, "CheckingNetwork", _checkingLanNetwork);
+        //    }
+        //}
+        ///// <summary>
+        ///// Gets or sets a value indicating whether LAN network endpoint is currently being checked for availablity.
+        ///// </summary>
+        ///// <value><c>true</c> if the LAN is available; otherwise, <c>false</c>.</value>
+        //public bool CheckingWanNetwork
+        //{
+        //    get { return _checkingWanNetwork; }
+        //    set
+        //    {
+        //        _checkingWanNetwork = value;
+        //       // MessagingCenter.Send<DomoticzApiService, bool>(this, "CheckingNetwork", _checkingWanNetwork);
+        //    }
+        //}
+
+        //public string CurrentSunriseText()
+        //{
+        //    return _sunriseText;
+        //}
+        //public string CurrentSunsetText()
+        //{
+        //    return _sunsetText;
+        //}
+        //public string CurrentStatusUpdated()
+        //{
+        //    return _statusUpdated;
+        //}
 
 
-        public void SetLanAvailable(bool yesOrNo)
-        {
-            _isLanAvailable = yesOrNo;
-          //  MessagingCenter.Send<DomoticzApiService, bool>(this, "SetNetworkStatus", true);
-        }
-        public void SetWanAvailable(bool yesOrNo)
-        {
-            _isWanAvailable = yesOrNo;
-           // MessagingCenter.Send<DomoticzApiService, bool>(this, "SetNetworkStatus", false);
-        }
 
-        /// <summary>
-        /// Gets or sets a value indicating whether LAN network endpoint is currently being checked for availablity.
-        /// </summary>
-        /// <value><c>true</c> if the LAN is available; otherwise, <c>false</c>.</value>
-        public bool CheckingLanNetwork
-        {
-            get { return _checkingLanNetwork; }
-            set
-            {
-                _checkingLanNetwork = value;
-                //MessagingCenter.Send<DomoticzApiService, bool>(this, "CheckingNetwork", _checkingLanNetwork);
-            }
-        }
-        /// <summary>
-        /// Gets or sets a value indicating whether LAN network endpoint is currently being checked for availablity.
-        /// </summary>
-        /// <value><c>true</c> if the LAN is available; otherwise, <c>false</c>.</value>
-        public bool CheckingWanNetwork
-        {
-            get { return _checkingWanNetwork; }
-            set
-            {
-                _checkingWanNetwork = value;
-               // MessagingCenter.Send<DomoticzApiService, bool>(this, "CheckingNetwork", _checkingWanNetwork);
-            }
-        }
 
-        public string CurrentSunriseText()
-        {
-            return _sunriseText;
-        }
-        public string CurrentSunsetText()
-        {
-            return _sunsetText;
-        }
-        public string CurrentStatusUpdated()
-        {
-            return _statusUpdated;
-        }
         public static DomoticzApiService Instance
         {
             get
@@ -116,9 +119,20 @@ namespace DomoticzHome.Services
             }
         }
 
-        public DomoticzApiService()
+        public DomoticzApiService ()
         {
             _baseUrl = "";
+            Connectivity.ConnectivityChanged += Connectivity_ConnectivityChanged;
+            Accelerometer.ShakeDetected += Accelerometer_ShakeDetected;
+
+            Task.Run ( ( ) => BackgroundTasks ( ) );
+        }
+
+        public DomoticzApiService( INavigationService navigationService )
+        {
+            _baseUrl = "";
+            _instance = new DomoticzApiService ( navigationService );
+            _navigationService = navigationService;
             Connectivity.ConnectivityChanged += Connectivity_ConnectivityChanged;
             Accelerometer.ShakeDetected += Accelerometer_ShakeDetected;
             
@@ -126,8 +140,11 @@ namespace DomoticzHome.Services
         }
 
 
-        public async Task<bool> CheckNetworkConnections()
+        public async Task<bool> CheckNetworkConnections( INavigationService navigationService )
         {
+            if (_navigationService == null)
+                _navigationService = navigationService;
+
             bool result = await CheckNetworkConnectionsAsync();
             return result;
         }
@@ -542,24 +559,31 @@ namespace DomoticzHome.Services
 
 
 
-        public async Task<bool> WaitWhileCheckinghNetwork()
-        {
-            while (CheckingLanNetwork && CheckingWanNetwork)
-            {
-                await Task.Delay(100);
-            }
+        //public async Task<bool> WaitWhileCheckinghNetwork()
+        //{
+        //    while (CheckingLanNetwork && CheckingWanNetwork)
+        //    {
+        //        await Task.Delay(100);
+        //    }
 
-            return true;
-        }
+        //    return true;
+        //}
 
 
-        public async Task<Domoticz_Times> GetSunRiseSunSet ( string uri )
+
+
+
+
+
+
+
+        public async Task<Domoticz_Times> GetSunRiseSunSetAsync ( string uriWithNoCredentialsOrQuery )
         {
             Domoticz_Times _domoResponse = null;
             try
             {
                 string jsonstring = string.Empty;
-                jsonstring = await GetAsync ( uri );
+                jsonstring = await GetAsync ( $"{uriWithNoCredentialsOrQuery}{Credentials}{SunRiseSunSet}" );
                 if (jsonstring == null)
                 {
                     #region Example Result
@@ -579,216 +603,39 @@ namespace DomoticzHome.Services
             return _domoResponse;
         }
 
-        public string GetCurrentServerUri(bool useLan, string extension)
+        public async Task<Domoticz_Scene_Response> GetScenesAsync ( string uriWithNoCredentialsOrQuery )
         {
-            string uri = string.Empty;
-            if (useLan)
+            //await WaitWhileCheckinghNetwork ( );
+            Domoticz_Scene_Response _domoResponse = null;
+            try
             {
-              //  uri = $"{GetLocalServerUri(true)}{extension}";
+                string jsonstring = string.Empty;
+                try
+                {
+                    jsonstring = await GetAsync ( $"{uriWithNoCredentialsOrQuery}{Credentials}{GetAllScenes}" );
+                }
+                catch (Exception)
+                {
+                    //// Initial local attempt failed try WAN server
+                    //uri = GetCurrentServerUri ( !useLan, Constants.GetAllScenes );
+                    //jsonstring = await GetAsync ( uri );
+                }
+                if (jsonstring != null)
+                {
+                    _domoResponse = JsonConvert.DeserializeObject<Domoticz_Scene_Response> ( jsonstring );
+                }
             }
-            else
+            catch (System.Exception ex)
             {
-               // uri = $"{GetWanServerUri(true)}{extension}";
+                Debug.WriteLine ( string.Format ( "Error Message: {0}", ex.Message ) );
+                Debug.WriteLine ( string.Format ( "Error Inner: {0}", ex.InnerException ) );
             }
-            return uri;
+            return _domoResponse;
         }
 
-        //public string GetCurrentServerImagesUri(bool useLan)
-        //{
-        //    //int index = _baseUrl.LastIndexOf(":");
-        //    string imageUrl = "http://192.168.1.4"; // _baseUrl.Remove(index, _baseUrl.Length-index);
-        //    if (useLan)
-        //        return $"{imageUrl}:81/Images/Switches/";
-        //    else
-        //    {
-        //        imageUrl = "http://bradapatterson.com";
-        //        return $"{imageUrl}:81/Images/Switches/";
 
-        //    }
-        //    //return string.Format("{0}:81/Images/Switches/", "http://192.168.1.4");
-        //}
 
-        //public string GetLocalServerUri(bool addExtension)
-        //{
-        //    string server = string.Empty;
-        //    string port = string.Empty;
-        //    server = CrossSettings.Current.GetValueOrDefault("Address", "80");
-        //    port = CrossSettings.Current.GetValueOrDefault("Port", "80");
-        //    string baseUri = $"http://{server}:{port}";
-        //    //_baseUrl = baseUri;
-        //    return (addExtension) ? $"{baseUri}/json.htm?" : $"{baseUri}";
-        //}
 
-        //public string GetWanServerUri(bool addExtension)
-        //{
-        //    string server = string.Empty;
-        //    string port = string.Empty;
-        //    server = CrossSettings.Current.GetValueOrDefault("WanAddress", "80");
-        //    port = CrossSettings.Current.GetValueOrDefault("WanPort", "80");
-        //    ////return string.Format("http://{0}:{1}/json.htm?username=YnJhZAo=&password=ZWxreTQ1NAo=&", server, port);
-        //    string baseUri = $"http://{server}:{port}";
-        //    //_baseUrl = baseUri;
-        //    return (addExtension) ? $"{baseUri}/json.htm?" : $"{baseUri}";
-        //}
-
-        //private void ResetBaseUrl()
-        //{
-
-        //    if (!CrossSettings.Current.GetValueOrDefault("UseWanSettings", false))
-        //    {
-        //        _baseUrl = GetWanServerUri(false);
-        //    }
-        //    else
-        //    {
-        //        _baseUrl = GetLocalServerUri(false);
-        //    }
-        //}
-
-        private string EncodeTo64(string toEncode)
-        {
-            byte[] toEncodeAsBytes = new System.Text.UTF8Encoding().GetBytes(toEncode); //   ...ASCIIEncoding.ASCII.GetBytes(toEncode);
-            string returnValue = System.Convert.ToBase64String(toEncodeAsBytes);
-            return returnValue;
-        }
-
-        //private async Task<string> CheckNetwork(string uri)
-        //{
-        //    Domoticz_Times result = null;
-        //    string baseUrl = string.Empty;
-        //    try
-        //    {
-        //        baseUrl = uri;
-        //        _baseUrl = uri;
-        //        uri = $"{baseUrl}{Constants.GetSunRiseSunSet}";
-        //        result = await GetSunRiseSunSet(uri);
-        //        if (result?.status == Response_Status.OK.ToString())
-        //        {
-        //            //_baseUrl = baseUrl;
-        //            SetCaptions(result);
-        //        }
-        //        else
-        //        {
-        //            baseUrl = string.Empty;
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Debug.WriteLine(string.Format("Error Message: {0}", ex.Message));
-        //        Debug.WriteLine(string.Format("Error Inner: {0}", ex.InnerException));
-        //    }
-
-        //    return baseUrl;
-        //}
-
-        //private void SetCaptions(Domoticz_Times result)
-        //{
-        //    if (result.Sunrise != _sunriseText)
-        //    {
-        //        _sunriseText = $"Sunrise: {result.Sunrise}";
-        //    }
-        //    if (result.Sunset != _sunsetText)
-        //    {
-        //        _sunsetText = $"Sunset: {result.Sunset}";
-        //    }
-        //    TimeSpan now = DateTime.Now.TimeOfDay;
-        //    int indexPeriod = now.ToString().LastIndexOf('.');
-        //    string updateInfo = now.ToString().Remove(indexPeriod);
-        //    if (_statusUpdated.CompareTo($"{updateInfo}") != 0)
-        //    {
-        //        //string up = String.Format("{0:d/M/yyyy HH:mm:ss}", now);
-        //        _statusUpdated = $"Updated: {updateInfo}";
-        //    }
-        //}
-
-        //private async Task<bool> CheckNetworkConnectionsAsync()
-        //{
-        //    string result = null;
-        //    try
-        //    {
-        //        // First check local network
-        //        CheckingLanNetwork = true;
-        //        CheckingWanNetwork = true;
-        //        result = await CheckNetwork(GetLocalServerUri(true));
-        //        if (result != null && result != string.Empty)
-        //        {
-        //            CheckingLanNetwork = false;
-        //            SetLanAvailable(true);
-        //            _baseUrl = GetLocalServerUri(false);
-        //        }
-        //        else
-        //        {
-        //            SetLanAvailable(false);
-        //        }
-        //        CheckingLanNetwork = false;
-
-        //        result = await CheckNetwork(GetWanServerUri(true));
-        //        if (result != null && result != string.Empty)
-        //        {
-        //            CheckingWanNetwork = false;
-        //            SetWanAvailable(true);
-        //            _baseUrl = GetWanServerUri(false);
-        //        }
-        //        else
-        //        {
-        //            SetWanAvailable(false);
-        //        }
-        //        CheckingWanNetwork = false;
-        //    }
-        //    catch (Exception)
-        //    {
-
-        //        return false;
-        //    }
-        //    return true;
-
-        //    #region MyRegion
-        //    //// failing calls 
-        //    //var reachable1 = await CrossConnectivity.Current.IsReachable("192.168.1.9:82", 2000);
-        //    //var reachable1b = await CrossConnectivity.Current.IsReachable("192.168.1.9", 2000);
-        //    //var reachable2 = await CrossConnectivity.Current.IsReachable("http://192.168.1.9:82", 2000);
-        //    //var reachable3 = await CrossConnectivity.Current.IsRemoteReachable("http://192.168.1.9:82", 2000);
-
-        //    //IEnumerable<ConnectionType> y = CrossConnectivity.Current.ConnectionTypes;
-        //    //IEnumerable<UInt64> z = CrossConnectivity.Current.Bandwidths;
-
-        //    //string localServer = CrossSettings.Current.GetValueOrDefault("Address", "");
-        //    //string remoteServer = CrossSettings.Current.GetValueOrDefault("WanAddress", "");
-
-        //    //bool available1 = System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable();
-        //    //bool available2 = CrossConnectivity.Current.IsConnected;
-
-        //    //var remoteAvailable = await CrossConnectivity.Current.IsRemoteReachable($"http://{remoteServer}");
-        //    //var localAvailable = await CrossConnectivity.Current.IsReachable(localServer, 3000);
-
-        //    //if (!available1 && !available2)
-        //    //{
-        //    //    //UseLanAddress = false;
-        //    //    //UseWanAddress = false;
-        //    //    await App.Current.MainPage.DisplayAlert("Network Unavailable", "Please set the correct address and retry.", "OK");
-        //    //    await _navigationService.NavigateAsync("SettingsPage");
-        //    //}
-        //    //else if (remoteAvailable)
-        //    //{
-        //    //    //UseLanAddress = false;
-        //    //    //UseWanAddress = true;
-        //    //}
-        //    //else if (localAvailable && available1 && available2)
-        //    //{
-        //    //    IsSwitchBusy = false;
-        //    //    IsSceneBusy = false;
-        //    //    //UseLanAddress = true;
-        //    //    //UseWanAddress = false;
-        //    //}
-        //    //else
-        //    //{
-        //    //    IsSwitchBusy = false;
-        //    //    IsSceneBusy = false;
-        //    //    //UseWanAddress = true;
-        //    //    await App.Current.MainPage.DisplayAlert("Servers not found", "Please set the correct address and retry.", "OK");
-        //    //    await _navigationService.NavigateAsync("SettingsPage");
-        //    //} 
-        //    #endregion
-        //}
 
 
 
@@ -796,33 +643,76 @@ namespace DomoticzHome.Services
         {
             while (true)
             {
-                // Establish if Network is available
-                bool networkSeen = await CheckNetworkConnections();
-                if (!networkSeen)
-                {
-                    await App.Current.MainPage.DisplayAlert ( "Network Unavailable", "Please enable the network and retry.", "OK" );
-                    //    await _navigationService.NavigateAsync("SettingsPage");
-                }
+                Response_Status primaryDomoticzIsSeen = Response_Status.NOT_CHECKED;
+                Response_Status secondaryDomoticzIsSeen = Response_Status.NOT_CHECKED;
 
                 // Establish connection with Domoticz
-                string primaryUri = $"{Preferences.Get ( "Protocol", "Http://" )}{Preferences.Get ( "Address", "192.168.1.53" )}:{Preferences.Get ( "Port", "8080" )}/json.htm?username=brad=&password=elky454=&{SunRiseSunSet}";
-                Response_Status primaryDomoticzIsSeen = await CheckNetworkForDomoticz ( primaryUri );
+                string pUri = $"{Preferences.Get ( "Protocol", null )}{Preferences.Get ( "Address", null )}:{Preferences.Get ( "Port", null )}";
+                string sUri = $"{Preferences.Get ( "SecondaryProtocol", null )}{Preferences.Get ( "SecondaryAddress", null )}:{Preferences.Get ( "SecondaryPort", null )}";
 
-                string secondaryUri = $"{Preferences.Get ( "Protocol", "Http://" )}{Preferences.Get ( "SecondaryAddress", "192.168.1.53" )}:{Preferences.Get ( "SecondaryPort", "8080" )}/json.htm?username=brad=&password=elky454=&{SunRiseSunSet}";
-                Response_Status secondaryDomoticzIsSeen = await CheckNetworkForDomoticz ( secondaryUri );
+
+                if ( !pUri.Equals(":") && !sUri.Equals ( ":" ))
+                {
+                    string primaryUri = $"{Preferences.Get ( "Protocol", null )}{Preferences.Get ( "Address", null )}:{Preferences.Get ( "Port", null )}";
+                    string secondaryUri = $"{Preferences.Get ( "Protocol", null )}{Preferences.Get ( "SecondaryAddress", null )}:{Preferences.Get ( "SecondaryPort", null )}";
+
+                    // Establish if Network is available then query the servers
+                    bool networkSeen = await CheckNetworkConnections ( _navigationService );
+                    if (!networkSeen)
+                    {
+                        //await App.Current  DisplayAlert ( "Question?", "Would you like to play a game", "Yes", "No" );
+                        await Prism.PrismApplicationBase.Current?.MainPage.DisplayAlert ( "Network Unavailable", "Please enable the network and retry.", "OK" );
+                        await _navigationService.NavigateAsync ( "SettingsPage" );
+                    }
+                    else
+                    {
+                        if (!Preferences.Get ( "UseSecondaryServer", false ))
+                        {
+                            primaryDomoticzIsSeen = await CheckNetworkForDomoticz ( primaryUri );
+                            secondaryDomoticzIsSeen = Response_Status.NOT_CHECKED;
+                        }
+                        else
+                        {
+                            secondaryDomoticzIsSeen = await CheckNetworkForDomoticz ( secondaryUri );
+                            primaryDomoticzIsSeen = await CheckNetworkForDomoticz ( primaryUri );
+                        }
+
+                        SetImages ( primaryDomoticzIsSeen, secondaryDomoticzIsSeen );
+                    } 
+                }
+
+
+
+
+
+
+
+
 
 
                 await Task.Delay(5000);
             }
         }
 
-        void Connectivity_ConnectivityChanged ( object sender, ConnectivityChangedEventArgs e )
+
+
+
+
+
+
+
+
+
+
+
+
+        private void Connectivity_ConnectivityChanged ( object sender, ConnectivityChangedEventArgs e )
         {
             Access = e.NetworkAccess;
             ConnectionProfiles = e.ConnectionProfiles;
         }
 
-        void Accelerometer_ShakeDetected ( object sender, EventArgs e )
+        private void Accelerometer_ShakeDetected ( object sender, EventArgs e )
         {
             // Process shake event
         }
@@ -845,15 +735,15 @@ namespace DomoticzHome.Services
 
         }
 
-        private async Task<Response_Status> CheckNetworkForDomoticz ( string uri )
+        private async Task<Response_Status> CheckNetworkForDomoticz ( string uriWithNoCredentialsOrQuery )
         {
             Domoticz_Times result = null;
             Response_Status success = Response_Status.ERR;
             try
             {
                 // You must set the Uri to the base HtpClient or the request fails
-                _baseUrl = uri;
-                result = await GetSunRiseSunSet ( uri );
+                _baseUrl = uriWithNoCredentialsOrQuery;
+                result = await GetSunRiseSunSetAsync ( $"{uriWithNoCredentialsOrQuery}" );
                 if ( result?.status == Response_Status.OK.ToString ( ) )
                 {
                     success = Response_Status.OK;
@@ -867,6 +757,27 @@ namespace DomoticzHome.Services
             }
 
             return success;
+        }
+
+        private void SetImages( Response_Status primaryDomoticzIsSeen , Response_Status secondaryDomoticzIsSeen )
+        {
+            if (primaryDomoticzIsSeen == Response_Status.OK)
+            {
+                Preferences.Set ( $"PrimaryServerAvailable", true );
+            }
+            else
+            {
+                Preferences.Set ( $"PrimaryServerAvailable", false );
+            }
+
+            if (secondaryDomoticzIsSeen == Response_Status.OK)
+            {
+                Preferences.Set ( $"SecondaryServerAvailable", true );
+            }
+            else
+            {
+                Preferences.Set ( $"SecondaryServerAvailable", false );
+            }
         }
 
 

@@ -1,21 +1,62 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:d="http://xamarin.com/schemas/2014/forms/design"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d"
+             xmlns:behaviors="clr-namespace:Xam.Behaviors;assembly=Xam.Behaviors"
+             xmlns:prism="clr-namespace:Prism.Mvvm;assembly=Prism.Forms"
+             prism:ViewModelLocator.AutowireViewModel="True"
+             Title="Scenes"
+             BackgroundColor="LightGray"
              x:Class="DomoticzHome.Views.ScenePage">
-    
-    
-    <ContentPage.Content>
-        <StackLayout>
-            <Label Text="Welcome to Xamarin.Forms!"
-                VerticalOptions="CenterAndExpand" 
-                HorizontalOptions="CenterAndExpand" />
-        </StackLayout>
-    </ContentPage.Content>
 
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <DataTemplate x:Key="SceneTemplate">
+                <ViewCell>
+                    <!--<ViewCell.ContextActions>
+                        <MenuItem Text="Properties" Clicked="OnProperties" />
+                    </ViewCell.ContextActions>-->
+                    <ViewCell.View BackgroundColor="LightGray"  >
+                        <Grid Margin="12" Padding="0" RowSpacing="0" ColumnSpacing="5" BackgroundColor="LightGray" >
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="70" />
+                                <ColumnDefinition Width="100*" />
+                            </Grid.ColumnDefinitions>
 
+                            <Image Source="{Binding SwitchImagePath}" Grid.Column="0" x:Name="TopImage" WidthRequest="20" HeightRequest="20" BackgroundColor="LightGray" />
+                            <StackLayout  Margin="12, 0, 0, 0" VerticalOptions="Start" Spacing="2" Grid.Column="1" BackgroundColor="LightGray" >
+                                <Label Text="{Binding Name}" FontSize="18" TextColor="#58666e" FontAttributes="Bold" BackgroundColor="LightGray"  />
+                                <StackLayout Orientation="Horizontal" BackgroundColor="LightGray"  >
+                                    <Label Text="Idx: " FontSize="14" TextColor="#58666e" />
+                                    <Label Text="{Binding idx}" FontSize="14" TextColor="#98a6ad" Margin="5, 0, 0, 0" />
+                                </StackLayout>
+                                <!--<StackLayout Orientation="Horizontal">
+                                    <Label Text="Type: " FontSize="14" TextColor="#58666e" />
+                                    <Label Text="{Binding Type}" FontSize="14" TextColor="#98a6ad" Margin="5, 0, 0, 0" />
+                                </StackLayout>
+                                <StackLayout Orientation="Horizontal">
+                                    <Label Text="Subtype: " FontSize="14" TextColor="#58666e" />
+                                    <Label Text="{Binding SubType}" FontSize="14" TextColor="#98a6ad" Margin="5, 0, 0, 0" />
+                                </StackLayout>-->
+                            </StackLayout>
+                        </Grid>
+                    </ViewCell.View>
+                </ViewCell>
+            </DataTemplate>
+        </ResourceDictionary>
+    </ContentPage.Resources>
 
+    <StackLayout>
+         <ActivityIndicator IsVisible="{Binding IsSceneBusy}" IsRunning="{Binding IsSceneBusy}" BackgroundColor="LightGray" 
+            VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand" />
+
+        <ListView ItemTemplate="{StaticResource SceneTemplate}" BackgroundColor="LightGray"  
+            ItemsSource="{Binding Scenes}" RowHeight="100">
+            <behaviors:Interaction.Behaviors>
+                <behaviors:BehaviorCollection>
+                    <behaviors:EventToCommand EventName="ItemTapped" Command="{Binding ToggleScene}" PassEventArgument="True" />
+                </behaviors:BehaviorCollection>
+            </behaviors:Interaction.Behaviors>
+        </ListView>
+    </StackLayout>
 
 </ContentPage>

@@ -8,7 +8,7 @@ namespace DomoticzHome.ViewModels
         public MainTabbedPageViewModel(INavigationService navigationService)
             : base(navigationService)
         {
-            Title = "Settings";
+            Title = "Main Tabbed";
         }
     }
 }

@@ -4,6 +4,7 @@ using DomoticzHome.ViewModels;
 using DomoticzHome.Views;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
+using System.Reflection;
 
 [assembly: XamlCompilation(XamlCompilationOptions.Compile)]
 namespace DomoticzHome
@@ -22,18 +23,25 @@ namespace DomoticzHome
         protected override async void OnInitialized()
         {
             InitializeComponent();
-
+            //Core.initializeKit ( typeof ( App ).GetTypeInfo ( ).Assembly );
 
             // await NavigationService.NavigateAsync("NavigationPage/MainPage");
 
-            await NavigationService.NavigateAsync("MainTabbedPage");
+            await NavigationService.NavigateAsync( "MainTabbedPage" );
         }
 
         protected override void RegisterTypes(IContainerRegistry containerRegistry)
         {
             containerRegistry.RegisterForNavigation<NavigationPage>();
             //containerRegistry.RegisterForNavigation<MainPage, MainPageViewModel>();
-            containerRegistry.RegisterForNavigation<MainTabbedPage, MainTabbedPageViewModel> ();
+
+            containerRegistry.RegisterForNavigation<MainPage> ( );
+            containerRegistry.RegisterForNavigation<MainTabbedPage> ();
+            containerRegistry.RegisterForNavigation<SwitchPage> ( );
+            containerRegistry.RegisterForNavigation<ScenePage> ( );
+
+            containerRegistry.RegisterForNavigation<SettingsPage> ( );
+
         }
     }
 }

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30011.22
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DomoticzHome", "DomoticzHome\DomoticzHome\DomoticzHome.csproj", "{BF2ADD17-55C1-459D-904E-8AAF86920225}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DomoticzHome", "DomoticzHome\DomoticzHome\DomoticzHome.csproj", "{BF2ADD17-55C1-459D-904E-8AAF86920225}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DomoticzHome.Android", "DomoticzHome\DomoticzHome.Android\DomoticzHome.Android.csproj", "{C3F40778-334F-46D3-B5F4-EA23DC51EDCB}"
 EndProject
@@ -227,9 +227,9 @@ Global
 		{DC27B4D6-E4FF-47AD-8FA7-6E05CE9FE38F}.AppStore|x86.ActiveCfg = Release|x86
 		{DC27B4D6-E4FF-47AD-8FA7-6E05CE9FE38F}.AppStore|x86.Build.0 = Release|x86
 		{DC27B4D6-E4FF-47AD-8FA7-6E05CE9FE38F}.AppStore|x86.Deploy.0 = Release|x86
-		{DC27B4D6-E4FF-47AD-8FA7-6E05CE9FE38F}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{DC27B4D6-E4FF-47AD-8FA7-6E05CE9FE38F}.Debug|Any CPU.Build.0 = Debug|x86
-		{DC27B4D6-E4FF-47AD-8FA7-6E05CE9FE38F}.Debug|Any CPU.Deploy.0 = Debug|x86
+		{DC27B4D6-E4FF-47AD-8FA7-6E05CE9FE38F}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{DC27B4D6-E4FF-47AD-8FA7-6E05CE9FE38F}.Debug|Any CPU.Build.0 = Debug|x64
+		{DC27B4D6-E4FF-47AD-8FA7-6E05CE9FE38F}.Debug|Any CPU.Deploy.0 = Debug|x64
 		{DC27B4D6-E4FF-47AD-8FA7-6E05CE9FE38F}.Debug|ARM.ActiveCfg = Debug|ARM
 		{DC27B4D6-E4FF-47AD-8FA7-6E05CE9FE38F}.Debug|ARM.Build.0 = Debug|ARM
 		{DC27B4D6-E4FF-47AD-8FA7-6E05CE9FE38F}.Debug|ARM.Deploy.0 = Debug|ARM
